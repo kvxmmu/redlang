@@ -25,6 +25,8 @@
 #define SYNTAX_CONSTRUCTION 10
 #define SBRACKET_OPEN 11
 #define SBRACKET_CLOSE 12
+#define CHAR 13
+#define INTERPOLATED_STRING 14
 
 // syntax constructions defined here
 #define RIGHT_ARROW 1
@@ -83,6 +85,9 @@ bool is_operator(tokenizer_args);
 bool is_block(tokenizer_args);
 bool is_expr(tokenizer_args);
 bool is_syntax_construction(tokenizer_args);
+bool is_string(tokenizer_args);
+bool is_character(tokenizer_args);
+bool is_float(tokenizer_args);
 
 std::vector<Token> lex(const std::string &data);
 
