@@ -11,3 +11,4 @@ add_library(redlang_parser lang/parser/parser.cpp lang/parser/parser.hpp
 add_executable(redlang main.cpp)
 
 target_link_libraries(redlang redlang_parser)
+add_definitions(-g)
