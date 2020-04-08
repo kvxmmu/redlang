@@ -12,6 +12,10 @@
 #define TREE 0
 #define SIMPLE_OBJECT 1
 
+#define BRACKET 0
+#define BRACE 1
+#define NOTHING 2
+
 
 typedef uint8_t tree_type_t;
 typedef uint16_t token_type_t;
@@ -34,11 +38,13 @@ public:
     SimpleVariant *variant = nullptr;
     bool need_free = false;
 
+    token_type_t block_type = NOTHING;
+
     AstTree() = default;
 
     AstTree(size_t alloc_size, SimpleVariant *__variant);
 
-    AstTree* new_tree();
+    AstTree* new_tree(token_type_t tkn_type = NOTHING);
     Token *new_token(const Token &tkn_ref);
 
     void clear_tree();
@@ -56,6 +62,7 @@ public:
         this->dealloc();
     }
 };
+
 
 void move_tree(const AstTree *ast, AstTree *dst);
 

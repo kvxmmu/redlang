@@ -45,8 +45,9 @@ AstTree::AstTree(size_t alloc_size, SimpleVariant *__variant) : variant(__varian
     this->tree.reserve(alloc_size);
 }
 
-AstTree *AstTree::new_tree() {
+AstTree *AstTree::new_tree(token_type_t token_type) {
     auto *ntree = new AstTree();
+    ntree->block_type = token_type;
     ntree->need_free = true;
     ntree->variant = nullptr;
 

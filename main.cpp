@@ -1,16 +1,10 @@
 #include <iostream>
 #include <lang/parser/types.hpp>
+#include <lang/parser/parser.hpp>
 
 int main() {
-    AstTree tree(10, nullptr);
-    tree.new_token(Token{
-        "test tree",
-        1
-    });
-    tree.new_tree();
-    tree.clear_tree();
-    /*
-     * Alloc & dealloc test
-     */
+    const std::string data = "func main(string[] args) {print(123);}"; // test text to test lexer
+    auto lexed = lex(data);
+    debug_print(lexed);
     return 0;
 }
