@@ -1,14 +1,6 @@
-import top_level_import.lower_level_import;
-
 func main(string[] args) -> int32 {
-    var auto_detect_type = 100;
-    string string_type = "string literal";
-    char single_character = 'h';
-    float pi = 3.14;
-
-    print("Args count - %d" % args.length);
-    print("File path - %s" % args[0]);
-
-    print(i"Interpolation example ${single_character}");
+    (string str) -> {
+        print(str);
+    }
     return 0;
 }

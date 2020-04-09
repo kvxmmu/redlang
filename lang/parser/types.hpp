@@ -14,11 +14,25 @@
 
 #define BRACKET 0
 #define BRACE 1
-#define NOTHING 2
+#define SBRACKET 2
+#define NOTHING 3
 
 
 typedef uint8_t tree_type_t;
 typedef uint16_t token_type_t;
+
+inline std::string get_block_type(tree_type_t type) {
+    switch (type) {
+        case BRACKET:
+            return "()";
+        case BRACE:
+            return "{}";
+        case SBRACKET:
+            return "[]";
+        default:
+            return "NOTHING";
+    }
+}
 
 
 struct SimpleVariant {

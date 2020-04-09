@@ -17,8 +17,8 @@ std::string readfile(const std::string &name) {
 
 int main() {
     const std::string data = readfile("../test.rl"); // test text to test lexer
-    std::cout << "ok" << std::endl;
     auto lexed = lex(data);
-    debug_print(lexed);
+    auto tree = parse(lexed);
+    debug_print(tree);
     return 0;
 }

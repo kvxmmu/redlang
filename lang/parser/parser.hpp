@@ -10,7 +10,9 @@
 #include <iostream>
 
 #define tokenizer_args RedIterator<std::string, char> &it, std::vector<Token> &tokens
+#define parser_args RedIterator<std::vector<Token>, Token> &it, AstTree &tree
 #define auto_place it, tokens
+#define pauto(TYPE) it, *tree.new_tree(TYPE)
 
 // tokens defined here
 #define ID 1
@@ -27,6 +29,8 @@
 #define SBRACKET_CLOSE 12
 #define CHAR 13
 #define INTERPOLATED_STRING 14
+#define ONELINE_COMMENT 15
+#define MULTILINE_COMMENT 16
 
 // syntax constructions defined here
 #define RIGHT_ARROW 1
@@ -37,9 +41,22 @@
 #define POINT 6
 
 
+std::string repeat(const std::string &src, size_t count);
+
 
 void debug_print(const std::vector<Token> &tokens);
+void debug_print(AstTree &tree, size_t indent = 0);
 bool any_match(const std::string &buff, const char &c);
+
+inline void unexpected_token_error(Token &token) {
+    std::cout << "RedLang ParseError: Unexpected token " << token.token << std::endl;
+    exit(0);
+}
+
+inline void expecting_error(const std::string &expected) {
+    std::cout << "RedLang ParseError: Expected token " << expected << std::endl;
+    exit(0);
+}
 
 
 template <typename T, typename V>
@@ -88,7 +105,15 @@ bool is_syntax_construction(tokenizer_args);
 bool is_string(tokenizer_args);
 bool is_character(tokenizer_args);
 bool is_float(tokenizer_args);
+bool is_oneline_comment(tokenizer_args);
+bool is_comment(tokenizer_args);
+
+// parsers
+void parse_brace(parser_args);
+void parse_brackets(parser_args);
+void parse_sbrackets(parser_args);
 
 std::vector<Token> lex(const std::string &data);
+AstTree parse(const std::vector<Token> &tokens);
 
 #endif //REDLANG_PARSER_HPP

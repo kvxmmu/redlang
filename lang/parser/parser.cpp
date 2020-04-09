@@ -44,6 +44,37 @@ void debug_print(const std::vector<Token> &tokens) {
     }
 }
 
+std::string repeat(const std::string &src, size_t count) {
+    if (count == 0)
+        return "";
+    else if (count == 1)
+        return src;
+    std::string out;
+
+    for (size_t _ = 0; _ < count; _++) {
+        out += src;
+    }
+
+    return out;
+}
+
+void debug_print(AstTree &tree, size_t indent) {
+    std::string indentation = repeat("    ", indent);
+    std::string chars;
+    for (SimpleVariant *variant : tree.tree) {
+        if (variant->type == TREE) {
+            auto ptr = reinterpret_cast<AstTree*>(variant->memptr);
+            chars = get_block_type(ptr->block_type);
+            std::cout << indentation << chars[0] << std::endl;
+            debug_print(*ptr, indent+1);
+            std::cout << indentation << chars[1] << std::endl;
+        } else if (variant->type == SIMPLE_OBJECT) {
+            auto tk = reinterpret_cast<Token*>(variant->memptr);
+            std::cout << indentation << tk->token << std::endl;
+        }
+    }
+}
+
 
 bool any_match(const std::string &buff, const char &c) {
     for (const char &character : buff) {
@@ -245,6 +276,53 @@ bool is_character(tokenizer_args) {
     return true;
 }
 
+bool is_oneline_comment(tokenizer_args) {
+    char character = it.peek(0);
+    char next_char = it.peek(1);
+
+    std::string comment;
+
+    if (character != '/' || next_char != '/')
+        return false;
+
+    it.next(2);
+    while (!it.is_done()) {
+        character = it.peek();
+        if (character == '\n')
+            break;
+        comment += character;
+        it.next();
+    }
+
+    tokens.push_back(Token{comment, ONELINE_COMMENT});
+
+    return true;
+}
+
+bool is_comment(tokenizer_args) {
+    char character = it.peek(0);
+    char next_char = it.peek(1);
+    if (character != '/' || next_char != '*')
+        return false;
+
+    it.next(2);
+
+    std::string comment;
+
+    while (!it.is_done()) {
+        character = it.peek(0);
+        next_char = it.peek(1);
+        if (character == '*' && next_char == '/') {
+            it.next();
+            break;
+        }
+        comment += character;
+        it.next();
+    }
+    tokens.push_back(Token{comment, MULTILINE_COMMENT});
+    return true;
+}
+
 
 void error_callback(size_t pos, const std::string &data) {
     std::cout << "RedLang SyntaxError: Unexpected character '" << data[pos] << "'" << std::endl;
@@ -262,6 +340,8 @@ std::vector<Token> lex(const std::string &data) {
         else if (is_id(auto_place)) {}
         else if (is_float(auto_place)) {}
         else if (is_digit(auto_place)) {}
+        else if (is_oneline_comment(auto_place)) {}
+        else if (is_comment(auto_place)) {}
         else if (is_syntax_construction(auto_place)){}
         else if (is_operator(auto_place)) {}
         else if (is_expr(auto_place)) {}
@@ -272,4 +352,104 @@ std::vector<Token> lex(const std::string &data) {
         it.next();
     }
     return tokens;
+}
+
+void parse_brace(parser_args) {
+    bool closed = false;
+
+    while (!it.is_done()) {
+        Token tkn = it.peek(0);
+        if (tkn.type == OPEN_BRACE) {
+            it.next();
+            parse_brace(pauto(BRACE));
+        } else if (tkn.type == SBRACKET_OPEN) {
+            it.next();
+            parse_sbrackets(pauto(SBRACKET));
+        } else if (tkn.type == OPEN_BRACKET) {
+            it.next();
+            parse_brackets(pauto(BRACKET));
+        } else if (tkn.type == CLOSE_BRACE) {
+            closed = true;
+            break;
+        } else {
+            tree.new_token(tkn);
+        }
+        it.next();
+    }
+    if (!closed)
+        expecting_error("}");
+}
+
+void parse_brackets(parser_args) {
+    bool closed = false;
+
+    while (!it.is_done()) {
+        Token tkn = it.peek(0);
+        if (tkn.type == OPEN_BRACE) {
+            it.next();
+            parse_brace(pauto(BRACE));
+        } else if (tkn.type == SBRACKET_OPEN) {
+            it.next();
+            parse_sbrackets(pauto(SBRACKET));
+        } else if (tkn.type == OPEN_BRACKET) {
+            it.next();
+            parse_brackets(pauto(BRACKET));
+        } else if (tkn.type == CLOSE_BRACKET) {
+            closed = true;
+            break;
+        } else {
+            tree.new_token(tkn);
+        }
+        it.next();
+    }
+    if (!closed)
+        expecting_error(")");
+}
+
+void parse_sbrackets(parser_args) {
+    bool closed = false;
+
+    while (!it.is_done()) {
+        Token tkn = it.peek(0);
+        if (tkn.type == OPEN_BRACE) {
+            it.next();
+            parse_brace(pauto(BRACE));
+        } else if (tkn.type == SBRACKET_OPEN) {
+            it.next();
+            parse_sbrackets(pauto(SBRACKET));
+        } else if (tkn.type == OPEN_BRACKET) {
+            it.next();
+            parse_brackets(pauto(BRACKET));
+        } else if (tkn.type == SBRACKET_CLOSE) {
+            closed = true;
+            break;
+        } else {
+            tree.new_token(tkn);
+        }
+        it.next();
+    }
+    if (!closed)
+        expecting_error("]");
+}
+
+AstTree parse(const std::vector<Token> &tokens) {
+    RedIterator<std::vector<Token>, Token> it(tokens, Token{});
+    AstTree tree(10, nullptr);
+    while (!it.is_done()) {
+        Token tkn = it.peek(0);
+        if (tkn.type == OPEN_BRACE) {
+            it.next();
+            parse_brace(pauto(BRACE));
+        } else if (tkn.type == SBRACKET_OPEN) {
+            it.next();
+            parse_sbrackets(pauto(SBRACKET));
+        } else if (tkn.type == OPEN_BRACKET) {
+            it.next();
+            parse_brackets(pauto(BRACKET));
+        } else {
+            tree.new_token(tkn);
+        }
+        it.next();
+    }
+    return tree;
 }
