@@ -11,6 +11,7 @@
 
 #define TREE 0
 #define SIMPLE_OBJECT 1
+#define SEMICOLON_T 0xae
 
 #define BRACKET 0
 #define BRACE 1
@@ -30,7 +31,7 @@ inline std::string get_block_type(tree_type_t type) {
         case SBRACKET:
             return "[]";
         default:
-            return "NOTHING";
+            return ";;";
     }
 }
 

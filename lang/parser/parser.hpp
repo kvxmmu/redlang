@@ -31,14 +31,31 @@
 #define INTERPOLATED_STRING 14
 #define ONELINE_COMMENT 15
 #define MULTILINE_COMMENT 16
+#define SEMICOLON 17
+#define COLON 18
+#define ASSIGNMENT 19
+#define COMMA 20
+
+// operators
+#define PLUS 21
+#define MINUS 22
+#define EQUALS 23
+#define NOT_EQUALS 24
+#define LESS_OR_EQUAL 25
+#define GREATER_OR_EQUAL 26
+#define LESS 27
+#define GREATER 28
+#define POW 29
+#define MUL 30
+#define DIV 31
+#define MOD 32
 
 // syntax constructions defined here
-#define RIGHT_ARROW 1
-#define LEFT_ARROW 2
-#define SEMICOLON 3
-#define IMPORT_STMT 4
-#define FUNC_STMT 5
-#define POINT 6
+#define RIGHT_ARROW 33
+#define LEFT_ARROW 34
+#define IMPORT 35
+#define FUNC 36
+#define POINT 37
 
 
 std::string repeat(const std::string &src, size_t count);
@@ -107,6 +124,7 @@ bool is_character(tokenizer_args);
 bool is_float(tokenizer_args);
 bool is_oneline_comment(tokenizer_args);
 bool is_comment(tokenizer_args);
+bool is_assignment_or_semicolon(tokenizer_args);
 
 // parsers
 void parse_brace(parser_args);

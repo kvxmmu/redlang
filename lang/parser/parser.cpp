@@ -9,21 +9,37 @@ namespace {
     const std::string skip_characters = " \t\b\n";
     const std::string id_characters = "_0123456789qwertyuiopasdfghjklzxcvbnm";
 
-    const std::vector<std::string> operators = {
-            "+", "-",
-            "==", "!=",
-            "<=", ">=",
-            "<", ">",
-            "**", "*",
-            "/", "%",
-            "="
+    typedef struct {
+        std::string value;
+        token_type_t meaning;
+    } Operator;
+
+    typedef struct {
+        std::string value;
+        token_type_t meaning;
+    } Construction;
+
+    const std::vector<Operator> operators = {
+            Operator{"+", PLUS},
+            Operator{"-", MINUS},
+            Operator{"==", EQUALS},
+            Operator{"!=", NOT_EQUALS},
+            Operator{"<=", LESS_OR_EQUAL},
+            Operator{">=", GREATER_OR_EQUAL},
+            Operator{"<", LESS},
+            Operator{">", GREATER},
+            Operator{"**", POW},
+            Operator{"*", MUL},
+            Operator{"/", DIV},
+            Operator{"%", MOD}
     };
 
-    const std::vector<std::string> syntax_constructions = {
-            "->", "<-",
-            "func", ".",
-            "import", // keyword
-            ";"
+    const std::vector<Construction> syntax_constructions = {
+            Construction{"->", RIGHT_ARROW},
+            Construction{"<-", LEFT_ARROW},
+            Construction{"func", FUNC},
+            Construction{".", POINT},
+            Construction{"import", IMPORT}, // keyword
     };
 }
 
@@ -168,12 +184,13 @@ bool is_float(tokenizer_args) {
 
 bool is_operator(tokenizer_args) {
     std::string buff;
-    for (const std::string &op : operators) {
+    for (const Operator &eop : operators) {
+        std::string op = eop.value;
         buff = peek_count(it, op.size());
         if (buff == op) {
             it.next(op.size() - 1);
             tokens.push_back(Token{op,
-                                   OPERATOR});
+                                   eop.meaning});
             return true;
         }
     }
@@ -210,11 +227,12 @@ bool is_expr(tokenizer_args) {
 
 
 bool is_syntax_construction(tokenizer_args) {
-    for (const std::string &construction : syntax_constructions) {
+    for (const Construction &constr : syntax_constructions) {
+        std::string construction = constr.value;
         std::string tmp = peek_count(it, construction.size());
         if (tmp == construction) {
             it.next(construction.size() - 1);
-            tokens.push_back(Token{construction, SYNTAX_CONSTRUCTION});
+            tokens.push_back(Token{construction, constr.meaning});
             return true;
         }
     }
@@ -329,6 +347,23 @@ void error_callback(size_t pos, const std::string &data) {
     exit(0);
 }
 
+bool is_assignment_or_semicolon(tokenizer_args) {
+    char chr = it.peek(0);
+    bool check = chr == ';' || chr == '=' || chr == ',';
+    if (!check)
+        return check;
+    if (chr == ';') {
+        tokens.push_back(Token{";", SEMICOLON});
+    } else if (chr == '=') {
+        tokens.push_back(Token{"=", ASSIGNMENT});
+    } else if (chr == ',') {
+        tokens.push_back(Token{",", COMMA});
+    } else if (chr == ':') {
+        tokens.push_back(Token{":", COLON});
+    }
+    return check;
+}
+
 
 std::vector<Token> lex(const std::string &data) {
     std::vector<Token> tokens;
@@ -337,12 +372,13 @@ std::vector<Token> lex(const std::string &data) {
         if (is_skip_character(auto_place)) {}
         else if (is_string(auto_place)) {}
         else if (is_character(auto_place)) {}
+        else if (is_syntax_construction(auto_place)) {}
         else if (is_id(auto_place)) {}
         else if (is_float(auto_place)) {}
         else if (is_digit(auto_place)) {}
         else if (is_oneline_comment(auto_place)) {}
         else if (is_comment(auto_place)) {}
-        else if (is_syntax_construction(auto_place)){}
+        else if (is_assignment_or_semicolon(auto_place)) {}
         else if (is_operator(auto_place)) {}
         else if (is_expr(auto_place)) {}
         else if (is_block(auto_place)) {}

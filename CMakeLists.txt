@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 include_directories(.)
 
 add_library(redlang_parser lang/parser/parser.cpp lang/parser/parser.hpp
-        lang/parser/types.cpp lang/parser/types.hpp)
+        lang/parser/types.cpp lang/parser/types.hpp lang/compiler/semantic.cpp lang/compiler/semantic.hpp)
 
 add_executable(redlang main.cpp)
 
