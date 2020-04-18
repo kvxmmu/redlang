@@ -23,8 +23,6 @@
 #define CLOSE_BRACE 6
 #define INTEGER 7
 #define FLOAT 8
-#define OPERATOR 9
-#define SYNTAX_CONSTRUCTION 10
 #define SBRACKET_OPEN 11
 #define SBRACKET_CLOSE 12
 #define CHAR 13

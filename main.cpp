@@ -20,6 +20,6 @@ int main() {
     const std::string data = readfile("../test.rl"); // test text to test lexer
     auto lexed = lex(data);
     auto tree = parse(lexed);
-    Semantic sem = get_semantic(tree);
+    run_semantic(tree);
     return 0;
 }
