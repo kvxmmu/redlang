@@ -57,6 +57,9 @@ namespace SemanticSpace {
 
 void run_semantic(AstTree &etree, RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> *common_iterator) {
     RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> *_it = nullptr;
+
+    Codegen generator;
+
     if (common_iterator != nullptr) {
         _it = common_iterator;
     } else {
@@ -74,6 +77,8 @@ void run_semantic(AstTree &etree, RedIterator<std::vector<SimpleVariant*>, Simpl
             define_function(callback_auto);
         else if (res.pattern->name == Names::define_variable)
             define_variable(callback_auto);
+        else if (res.pattern->name == Names::assign_variable)
+            assign_variable(callback_auto);
         it.next(res.result);
     }
 }
@@ -84,81 +89,54 @@ void define_function(callback_params) {
     auto arguments = parse_this<SemTypes::FunctionArgument, token_type_t, 1, parse_args>(args, SemanticSpace::arg_level_semantizer);
     std::string return_type = reinterpret_cast<Token*>(it.peek(4)->memptr)->token;
     auto block = reinterpret_cast<AstTree*>(it.peek(5)->memptr);
-    SemTypes::FunctionDefine function(name, return_type);
-    std::cout << "Define function " << name << " with return type " << return_type << std::endl;
-    std::cout << "Arguments: " << std::endl;
-    for (SemTypes::FunctionArgument &argument : arguments) {
-        std::cout << "\t" << argument.name << " with type " << argument.type;
-        if (argument.is_array)
-            std::cout << "[]";
-        if (argument.default_value != nullptr)
-            std::cout << " with default value";
-        std::cout << std::endl;
-    }
+    SemTypes::FunctionDefine function(name, return_type, arguments, block);
+    generator.submit_function_create(function);
 }
 
 void define_variable(callback_params) {
+    std::string type = reinterpret_cast<Token*>(it.peek(0)->memptr)->token;
+    std::string id = reinterpret_cast<Token*>(it.peek(1)->memptr)->token;
+
+    std::vector<SimpleVariant*> expression;
+
+    size_t pos = 3;
+    while (!it.is_done(pos)) {
+        SimpleVariant *variant = it.peek(pos);
+        if (variant->type == SIMPLE_OBJECT) {
+            auto tkn = reinterpret_cast<Token*>(variant->memptr);
+            if (tkn->type == SEMICOLON)
+                break;
+        }
+        expression.push_back(variant);
+        pos++;
+    }
+    SemTypes::VariableDefine define(type, id, expression);
+    generator.submit_variable_define(define);
 
 }
 
-void call_sea_man() {
-    std::cout << "Блять, да мне похуй на тебя, блять, слушай, какая у тебя там тачка,\n"
-                 "блять, квартиры, срачки там блять, яхты, всё, мне похуй, хоть там\n"
-                 "\"Бэнтли\", хоть блять нахуй \"Майбах\", хоть \"Роллс-Ройс\", хоть \"Бугатти\"\n"
-                 "блять, хоть стометровая яхта, мне на это насрать, понимаешь? Сколько ты\n"
-                 "там, кого ебешь, каких баб, каких значит вот этих самок шикарных или\n"
-                 "атласных, блять в космос ты летишь, мне на это насрать, понимаешь? Я,\n"
-                 "блять, в своем познании настолько преисполнился, что я как будто бы уже\n"
-                 "сто триллионов миллиардов лет, блять, проживаю на триллионах и\n"
-                 "триллионах таких же планет, как эта Земля, мне этот мир абсолютно\n"
-                 "понятен, и я здесь ищу только одного, блять, - покоя, умиротворения и\n"
-                 "вот этой гармонии, от слияния с бесконечно вечным, от созерцания\n"
-                 "великого фрактального подобия и от вот этого замечательного всеединства\n"
-                 "существа, бесконечно вечного, куда ни посмотри, хоть вглубь - бесконечно\n"
-                 " малое, хоть ввысь - бесконечное большое, понимаешь? А ты мне опять со\n"
-                 "своим вот этим блять, иди суетись дальше, это твоё распределение, это\n"
-                 "твой путь и твой горизонт познания и ощущения твоей природы, он\n"
-                 "несоизмеримо мелок по сравнению с моим, понимаешь? Я как будто бы уже\n"
-                 "давно глубокий старец, бессмертный, ну или там уже почти бессмертный,\n"
-                 "который на этой планете от её самого зарождения, ещё когда только Солнце\n"
-                 " только-только сформировалось как звезда, и вот это газопылевое облако,\n"
-                 "вот, после взрыва, Солнца, когда оно вспыхнуло, как звезда, начало\n"
-                 "формировать вот эти коацерваты, планеты, понимаешь, я на этой Земле уже\n"
-                 "как будто почти пять миллиардов лет блять живу и знаю её вдоль и поперёк\n"
-                 " этот весь мир, а ты мне какие-то... мне похуй на твои тачки, на твои\n"
-                 "блять нахуй яхты, на твои квартиры, там, на твоё благо. Я был на этой\n"
-                 "планете бесконечным множеством, и круче Цезаря, и круче Гитлера, и круче\n"
-                 " всех великих, понимаешь, был, а где-то был конченым говном, ещё хуже,\n"
-                 "чем здесь. Я множество этих состояний чувствую. Где-то я был больше\n"
-                 "подобен растению, где-то я больше был подобен птице, там, червю, где-то\n"
-                 "был просто сгусток камня, это всё есть душа, понимаешь? Она имеет грани\n"
-                 "подобия совершенно многообразные, бесконечное множество. Но тебе этого\n"
-                 "не понять, поэтому ты езжай себе блять, мы в этом мире как бы живем\n"
-                 "разными ощущениями и разными стремлениями, соответственно, разное наше и\n"
-                 " место, разное и наше распределение. Тебе я желаю все самые крутые тачки\n"
-                 " чтоб были у тебя, и все самые лучше самки чтобы раздвигали ноги перед\n"
-                 "тобой, чтобы раздвигали перед тобой щели, на шиворот-навыворот, блять,\n"
-                 "перед тобой, как ковёр, это самое, раскрывали, растлевали, растлали, и\n"
-                 "ты их чтобы ебал до посинения, докрасна, вон, как Солнце закатное, и\n"
-                 "чтоб на лучших яхтах, и на самолётах летал, и кончал прямо с\n"
-                 "иллюминатора, и делал всё, что только в голову могло прийти и не прийти,\n"
-                 " если мало идей, обращайся ко мне, я тебе на каждую твою идею предложу\n"
-                 "сотню триллионов, как всё делать. Ну а я всё, я иду как глубокий старец,\n"
-                 " узревший вечное, прикоснувшийся к Божественному, сам стал богоподобен и\n"
-                 " устремлен в это бесконечное, и который в умиротворении, покое,\n"
-                 "гармонии, благодати, в этом сокровенном блаженстве пребывает,\n"
-                 "вовлеченный во всё и во вся, понимаешь, вот и всё, в этом наша разница.\n"
-                 "Так что я иду любоваться мирозданием, а ты идёшь преисполняться в ГРАНЯХ\n"
-                 " каких-то, вот и вся разница, понимаешь, ты не зришь это вечное\n"
-                 "бесконечное, оно тебе не нужно. Ну зато ты, так сказать, более активен,\n"
-                 "как вот этот дятел долбящий, или муравей, который очень активен в своей\n"
-                 "стезе, поэтому давай, наши пути здесь, конечно, имеют грани подобия,\n"
-                 "потому что всё едино, но я-то тебя прекрасно понимаю, а вот ты меня -\n"
-                 "вряд ли, потому что я как бы тебя в себе содержу, всю твою природу, она\n"
-                 "составляет одну маленькую там песчиночку, от того что есть во мне, вот и\n"
-                 " всё, поэтому давай, ступай, езжай, а я пошел наслаждаться нахуй блять\n"
-                 "прекрасным осенним закатом на берегу теплой южной реки. Всё,\n"
-                 "пиздуй-бороздуй, и я попиздил, нахуй" << std::endl;
+void assign_variable(callback_params) {
+    std::string id = reinterpret_cast<Token*>(it.peek(0)->memptr)->token;
+
+    std::vector<SimpleVariant*> expression;
+
+    size_t pos = 2;
+    while (!it.is_done(pos)) {
+        SimpleVariant *variant = it.peek(pos);
+        if (variant->type == SIMPLE_OBJECT) {
+            auto tkn = reinterpret_cast<Token*>(variant->memptr);
+            if (tkn->type == SEMICOLON)
+                break;
+        }
+        expression.push_back(variant);
+        pos++;
+    }
+    SemTypes::VariableAssign vassign(id, expression);
+    generator.submit_variable_assign(vassign);
+}
+
+void except(const std::string &comment) {
+    std::cout << "RedLang SemanticError: " << comment << std::endl;
     exit(0);
 }
 
@@ -167,12 +145,12 @@ void parse_args(SemantizerResponse &res, std::vector<SemTypes::FunctionArgument>
     std::string name = res.pattern->name;
     if (name == Names::comma) {
         if (last == COMMA)
-            call_sea_man();
+            except("Params must be comma-separated(not ,,)");
         last = COMMA;
         return;
     }
     if (last != COMMA && last != 1)
-        call_sea_man();
+        except("Params must be comma-separated");
     std::string type = reinterpret_cast<Token*>(it.peek(0)->memptr)->token;
     std::string id = reinterpret_cast<Token*>(it.peek(1)->memptr)->token;
     if (name == Names::ordered_arg || name == Names::array_arg) {
@@ -183,7 +161,7 @@ void parse_args(SemantizerResponse &res, std::vector<SemTypes::FunctionArgument>
         SemTypes::FunctionArgument &arg = SemTypes::FunctionArgument(type, id, false).set_default_value(default_value);
         args.push_back(arg);
     } else {
-        call_sea_man();
+        except("Da fuck");
     }
     last = 0;
 }

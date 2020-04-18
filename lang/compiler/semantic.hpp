@@ -7,27 +7,17 @@
 
 #include <lang/parser/parser.hpp>
 #include <lang/parser/types.hpp>
+
 #include <utility>
 
-#define callback_params RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> &it
-#define callback_auto it
+#define callback_params RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> &it, Codegen &generator
+#define callback_auto it, generator
 
 #define VARIABLE_ASSIGNMENT 1
 
 typedef RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> DefaultIt;
 
 namespace SemTypes {
-    class FunctionDefine {
-    public:
-        std::string name;
-        std::string return_type;
-
-        FunctionDefine(std::string __name, std::string __return_type) : name(std::move(__name)),
-            return_type(std::move(__return_type)) {
-
-        }
-    };
-
     class FunctionArgument {
     public:
         std::string type;
@@ -38,7 +28,7 @@ namespace SemTypes {
         SimpleVariant *default_value = nullptr;
 
         FunctionArgument(std::string __type, std::string __name, bool _is_array) : type(std::move(__type)), name(std::move(__name)),
-            is_array(_is_array){
+                                                                                   is_array(_is_array){
 
         }
 
@@ -47,6 +37,53 @@ namespace SemTypes {
             return *this;
         }
     };
+
+    class FunctionDefine {
+    public:
+        std::string name;
+        std::string return_type;
+        std::vector<FunctionArgument> args;
+        AstTree *code;
+
+        FunctionDefine(std::string __name, std::string __return_type, std::vector<FunctionArgument> __args, AstTree *__code) : name(std::move(__name)),
+            return_type(std::move(__return_type)), args(std::move(__args)), code(__code) {
+
+        }
+    };
+
+    class VariableAssign {
+    public:
+        std::string name;
+        std::vector<SimpleVariant *> value;
+
+        VariableAssign(std::string __name, std::vector<SimpleVariant *> __value) : name(std::move(__name)), value(std::move(__value)) {
+
+        }
+    };
+
+    class VariableDefine {
+    public:
+        std::string type;
+        std::string name;
+        std::vector<SimpleVariant *> value;
+
+        VariableDefine(std::string __type, std::string __name,
+                std::vector<SimpleVariant *> __value) : name(std::move(__name)), type(std::move(__type)), value(std::move(__value)) {
+
+        }
+    };
+
+    class Call {
+    public:
+        std::vector<SimpleVariant*> expression;
+        FunctionArgument arguments;
+
+        Call(std::vector<SimpleVariant*> expr, FunctionArgument args) : expression(std::move(expr)), arguments(std::move(args)) {
+
+        }
+    };
+
+
 }
 
 class Pattern {
@@ -125,11 +162,51 @@ public:
     }
 };
 
+class Codegen {
+public:
+    /*
+     * Codegeneration stuff
+     */
+
+    void execute() {
+        /*
+         * execute stuff
+         */
+    }
+
+    void submit_function_create(SemTypes::FunctionDefine &function) {
+        /*
+         * Function create stuff
+         */
+        std::cout << "Create function with name " << function.name << " and return type " << function.return_type << std::endl;
+        std::cout << std::endl;
+    }
+
+    void submit_variable_define(SemTypes::VariableDefine &define) {
+        /*
+         * Variable define stuff
+         */
+
+        std::cout << "Define variable with name " << define.name << " and type " << define.type <<
+                     " With expression length: " << define.value.size() << std::endl;
+        std::cout << std::endl;
+    }
+
+    void submit_variable_assign(SemTypes::VariableAssign &assign) {
+        /*
+         * Variable assign stuff
+         */
+        std::cout << "Assign variable with name " << assign.name << " and expression length: " << assign.value.size() << std::endl;
+        std::cout << std::endl;
+    }
+};
+
 void run_semantic(AstTree &etree, RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> *common_iterator = nullptr);
 
 // callbacks
 void define_function(callback_params);
 void define_variable(callback_params);
+void assign_variable(callback_params);
 
 template <typename T, typename StructType, StructType first_value, void (*parse_function)(SemantizerResponse &, std::vector<T> &, DefaultIt &, StructType &)>
 std::vector<T> parse_this(SimpleVariant *variant, Semantizer &sem) {

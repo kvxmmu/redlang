@@ -1,5 +1,6 @@
-int value = 10 + a;
+int value = 10 + 1;
+value = 1 + 1;
 
-func b(int fuck[] some_huita a) -> int {
+func b(int fuck[], int a) -> int {
 
 }
