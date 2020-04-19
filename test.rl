@@ -1,6 +1,7 @@
 int value = 10 + 1;
 value = 1 + 1;
 
-func b(int fuck[], int a) -> int {
+avtor.ti.chto[1].hui()
 
+func b(int fuck[], int a) -> int {
 }

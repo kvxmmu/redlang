@@ -20,6 +20,6 @@ int main() {
     const std::string data = readfile("../test.rl"); // test text to test lexer
     auto lexed = lex(data);
     auto tree = parse(lexed);
-    run_semantic(tree);
+    std::cout << "IR Compiled: " << compile_semantic(tree).build() << std::endl; // own IR
     return 0;
 }

@@ -14,20 +14,74 @@ namespace Names {
     const static std::string default_arg = "default_arg";
     const static std::string array_arg = "array_arg";
     const static std::string comma = "comma";
+    const static std::string call = "call";
+    const static std::string load_attribute = "load_attribute";
+    const static std::string trash = "trash";
+    const static std::string call_attribute = "call_attribute";
+    const static std::string load_id = "load_id";
+    const static std::string load_index = "load_index";
+
+    std::vector<token_type_t> operators = {
+            ASSIGNMENT, PLUS, MINUS,
+            POW, MUL, DIV, LESS,
+            GREATER, GREATER_OR_EQUAL,
+            MOD, RIGHT_ARROW, LEFT_ARROW,
+            POINT
+    };
 }
 
 namespace SemanticSpace {
+
     static Pattern assignment = Pattern().add(ID).add(ASSIGNMENT).add("ANY").until_pattern(SEMICOLON);
     static Pattern define_variable = Pattern().add(ID).add(ID).add(ASSIGNMENT).add("ANY").until_pattern(SEMICOLON);
     static Pattern define_function = Pattern().add(FUNC).add(ID).add("$BRACKET").add(RIGHT_ARROW).add(ID).add("$BRACE");
     static Pattern create_lambda = Pattern().add("$BRACKET").add(RIGHT_ARROW).add("$BRACE");
+    static Pattern load_attribute = Pattern().add(POINT).add(ID);
+    static Pattern trash = Pattern().add(ID).add(SEMICOLON);
+    static Pattern load_id = Pattern().add(ID);
+
+    size_t custom_call(DefaultIt &it) {
+        size_t pos = 0;
+        while (!it.is_done(pos)) {
+            SimpleVariant *variant = it.peek(pos);
+            if (variant->type == TREE) {
+                auto pTree = reinterpret_cast<AstTree*>(variant->memptr);
+                if (pTree->block_type == BRACKET)
+                    return pos+1;
+            } else {
+                auto pToken = reinterpret_cast<Token*>(variant->memptr);
+                for (token_type_t &tkn : Names::operators) {
+                    if (pToken->type == tkn)
+                        return 0;
+                }
+            }
+            pos++;
+        }
+
+        return 0;
+    }
+
+    size_t custom_call_attribute(DefaultIt &it) {
+        size_t match = 0;
+        if ((match = load_attribute.match(it)) != 0) {
+            SimpleVariant *nextval = it.peek(match);
+            if (nextval != nullptr && nextval->type == TREE) {
+                auto pTree = reinterpret_cast<AstTree*>(nextval->memptr);
+                if (pTree->block_type == BRACKET)
+                    return match + 1;
+            }
+        }
+        return 0;
+    }
 
     // function argument patterns
     static Pattern ordered_arg = Pattern().add(ID).add(ID);
     static Pattern default_arg = Pattern().add(ID).add(ID).add(ASSIGNMENT).add("_"+std::to_string(COMMA));
     static Pattern array_arg = Pattern().add(ID).add(ID).add("$SBRACKET");
     static Pattern comma = Pattern().add(COMMA);
-
+    static Pattern call = Pattern().set_custom_match(custom_call);
+    static Pattern call_attribute = Pattern().set_custom_match(custom_call_attribute);
+    static Pattern load_index = Pattern().add("$SBRACKET");
 
     Semantizer top_level_semantizer = Semantizer()
             .add(Names::assign_variable,
@@ -37,14 +91,21 @@ namespace SemanticSpace {
             .add(Names::define_function,
                  define_function)
             .add(Names::create_lambda,
-                 create_lambda);
+                 create_lambda)
+            .add(Names::trash, trash);
 
     Semantizer func_level_semantizer = Semantizer()
             .add(Names::assign_variable,
                     assignment)
             .add(Names::define_variable, define_variable)
             .add(Names::define_function, define_function)
-            .add(Names::create_lambda, create_lambda);
+            .add(Names::call, call)
+            .add(Names::call_attribute, call_attribute)
+            .add(Names::load_attribute, load_attribute)
+            .add(Names::load_index, load_index)
+            .add(Names::create_lambda, create_lambda)
+            .add(Names::trash, trash)
+            .add(Names::load_id, load_id);
 
     Semantizer arg_level_semantizer = Semantizer()
             .add(Names::default_arg, default_arg)
@@ -55,7 +116,7 @@ namespace SemanticSpace {
 }
 
 
-void run_semantic(AstTree &etree, RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> *common_iterator) {
+Codegen compile_semantic(AstTree &etree, RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> *common_iterator) {
     RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> *_it = nullptr;
 
     Codegen generator;
@@ -68,19 +129,55 @@ void run_semantic(AstTree &etree, RedIterator<std::vector<SimpleVariant*>, Simpl
     }
     RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> &it = *_it;
     while (!it.is_done()) {
-        SemantizerResponse res = SemanticSpace::top_level_semantizer.check(it);
+        SemantizerResponse res = SemanticSpace::func_level_semantizer.check(it);
         if (res.result == 0) {
-            std::cerr << "Found piece of crap" << std::endl;
+            std::cerr << "!Found piece of crap" << std::endl;
             exit(1);
         }
-        if (res.pattern->name == Names::define_function)
+        if (res.pattern->name == Names::define_function) {
             define_function(callback_auto);
-        else if (res.pattern->name == Names::define_variable)
+        } else if (res.pattern->name == Names::define_variable) {
             define_variable(callback_auto);
-        else if (res.pattern->name == Names::assign_variable)
+        } else if (res.pattern->name == Names::assign_variable) {
             assign_variable(callback_auto);
+        } else if (res.pattern->name == Names::call) {
+            call(callback_auto);
+        } else if (res.pattern->name == Names::load_attribute) {
+            load_attribute(callback_auto);
+        } else if (res.pattern->name == Names::load_id) {
+            load_id(callback_auto);
+        } else if (res.pattern->name == Names::call_attribute) {
+            call_attribute(callback_auto);
+        } else {
+            std::cout << "Его оставили без внимания, а ты даже не знаешь его имени: " << res.pattern->name << std::endl;
+        }
         it.next(res.result);
     }
+    return generator;
+}
+
+void load_attribute(callback_params) {
+    std::string attribute_name = reinterpret_cast<Token*>(it.peek(1)->memptr)->token;
+    std::cout << "Load attribute " << attribute_name << std::endl;
+}
+
+
+void call(callback_params) {
+    std::cout << "Call something" << std::endl;
+}
+
+void load_id(callback_params) {
+    std::string id = reinterpret_cast<Token*>(it.peek(0)->memptr)->token;
+    std::cout << "Load id " << id << std::endl;
+}
+
+void call_attribute(callback_params) {
+    std::string attribute_name = reinterpret_cast<Token*>(it.peek(1)->memptr)->token;
+    std::cout << "Call attribute " << attribute_name << std::endl;
+}
+
+void load_index(callback_params) {
+    std::cout << "Load index(mne len schitatb)" << std::endl;
 }
 
 void define_function(callback_params) {
@@ -227,4 +324,20 @@ bool Pattern::check_pattern(std::string str, SimpleVariant *variant) {
         return not_ == !ret;
     }
     return false;
+}
+
+void Codegen::submit_function_create(SemTypes::FunctionDefine &function) {
+
+}
+
+void Codegen::submit_variable_define(SemTypes::VariableDefine &define) {
+
+}
+
+void Codegen::submit_variable_assign(SemTypes::VariableAssign &assign) {
+
+}
+
+std::string Codegen::build() {
+    return "";
 }

@@ -162,51 +162,51 @@ public:
     }
 };
 
+typedef struct {
+    std::string identifier;
+    std::vector<std::string> args;
+} Operation;
+
 class Codegen {
 public:
     /*
      * Codegeneration stuff
      */
+    const std::string load_variable = "load_variable";
+    const std::string call = "call";
 
-    void execute() {
-        /*
-         * execute stuff
-         */
-    }
+    const std::string add = "add"; // +
+    const std::string sub = "sub"; // -
+    const std::string mul = "mul"; // *
+    const std::string div = "div"; // /
 
-    void submit_function_create(SemTypes::FunctionDefine &function) {
-        /*
-         * Function create stuff
-         */
-        std::cout << "Create function with name " << function.name << " and return type " << function.return_type << std::endl;
-        std::cout << std::endl;
-    }
+    const std::string def = "def"; // def name
 
-    void submit_variable_define(SemTypes::VariableDefine &define) {
-        /*
-         * Variable define stuff
-         */
+    const std::string end = "end"; // def name instructions end
 
-        std::cout << "Define variable with name " << define.name << " and type " << define.type <<
-                     " With expression length: " << define.value.size() << std::endl;
-        std::cout << std::endl;
-    }
 
-    void submit_variable_assign(SemTypes::VariableAssign &assign) {
-        /*
-         * Variable assign stuff
-         */
-        std::cout << "Assign variable with name " << assign.name << " and expression length: " << assign.value.size() << std::endl;
-        std::cout << std::endl;
-    }
+    std::vector<Operation> instructions;
+
+    void submit_function_create(SemTypes::FunctionDefine &function);
+
+    void submit_variable_define(SemTypes::VariableDefine &define);
+
+    void submit_variable_assign(SemTypes::VariableAssign &assign);
+
+    std::string build();
 };
 
-void run_semantic(AstTree &etree, RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> *common_iterator = nullptr);
+Codegen compile_semantic(AstTree &etree, RedIterator<std::vector<SimpleVariant*>, SimpleVariant*> *common_iterator = nullptr);
 
 // callbacks
 void define_function(callback_params);
 void define_variable(callback_params);
 void assign_variable(callback_params);
+void call(callback_params);
+void load_id(callback_params);
+void call_attribute(callback_params);
+void load_attribute(callback_params);
+void load_index(callback_params);
 
 template <typename T, typename StructType, StructType first_value, void (*parse_function)(SemantizerResponse &, std::vector<T> &, DefaultIt &, StructType &)>
 std::vector<T> parse_this(SimpleVariant *variant, Semantizer &sem) {
